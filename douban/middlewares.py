@@ -3,7 +3,7 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-from scrapy import signals
+from scrapy import signals, Request
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -68,7 +68,7 @@ class DoubanDownloaderMiddleware:
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
-    def process_request(self, request, spider):
+    def process_request(self, request: Request, spider):
         # Called for each request that goes through the downloader
         # middleware.
 
@@ -78,6 +78,21 @@ class DoubanDownloaderMiddleware:
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
+        cookies = {
+            'bid': '1Mi8Use-BJo',
+            'douban-fav-remind': '1',
+            'll': '"108305"',
+            'ap_v': '0,6.0',
+            'dbcl2': '"231747561:7o8b+ndLKjM"',
+            'ck': 'frAt',
+            'push_noty_num': '0',
+            'push_doumail_num': '0',
+        }
+        # Add cookies to the request
+        # request.cookies
+        request.cookies = cookies
+        request.meta['proxy'] = 'socks5://127.0.0.1:1080'
+
         return None
 
     def process_response(self, request, response, spider):

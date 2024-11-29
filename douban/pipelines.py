@@ -11,6 +11,7 @@ import pandas as pd
 import pymysql
 
 
+
 class DoubanPipeline:
 
 
@@ -21,9 +22,9 @@ class DoubanPipeline:
     def process_item(self, item, spider):
         # 将每个爬取的 item 数据添加到列表中
         self.movies_data.append({
-            'title': item.get('title'),
-            'rating_num': item.get('rating_num'),
-            'inq': item.get('inq')
+            'title': item.get('title', 'N/A'),  # Use 'N/A' or another default value if title is missing
+            'rating_num': item.get('rating_num', 'N/A'),
+            'inq': item.get('inq', 'N/A')
         })
         return item
 
@@ -35,30 +36,44 @@ class DoubanPipeline:
 
 
 class MySQLPipeline:
-
     def __init__(self):
         # 在初始化时连接到 MySQL 数据库
         self.conn = pymysql.connect(
-            host='localhost',    # MySQL 服务器地址
+            host='110.41.68.46',    # MySQL 服务器地址
+            port=3307,
             user='root',         # 数据库用户名
-            password='nishigeSB666', # 数据库密码
-            database='demo',    # 要连接的数据库名
+            password='CL@1023st', # 数据库密码
+            database='libohong',    # 要连接的数据库名
             charset='utf8mb4'    # 设置字符集，避免中文乱码
         )
         self.cursor = self.conn.cursor()
-
+        self.data_list = []
     def process_item(self, item, spider):
         # 插入数据到数据库
-        insert_query = """
+        self.insert_query = """
         INSERT INTO movie (title, rating_num, inq)
         VALUES (%s, %s, %s)
         """
         data = (item['title'], item['rating_num'], item['inq'])
-        self.cursor.execute(insert_query, data)
-        self.conn.commit()
-        return item
+        self.data_list.append(data)
+        if(len(self.data_list)>=100):
+            self.cursor.executemany(self.insert_query, self.data_list)
+            self.data_list.clear()
+
+        # return item
+
+
+
+
 
     def close_spider(self, spider):
+
+        if (len(self.data_list) > 0):
+            self.cursor.executemany(self.insert_query, self.data_list)
+            self.data_list.clear()
+
+        self.conn.commit()
+
         # 爬虫结束时，关闭数据库连接
         self.cursor.close()
         self.conn.close()
